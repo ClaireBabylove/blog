@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>call和apply原理解析 | Claire&#39;s 前端进阶</title>
+    <meta name="description" content="first blog">
+    <meta name="generator" content="VuePress 1.4.0">
+    <meta name="theme-color" content="#3eaf7c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
+    <link rel="preload" href="/blog/assets/css/0.styles.38b4a37b.css" as="style"><link rel="preload" href="/blog/assets/js/app.82f7a662.js" as="script"><link rel="preload" href="/blog/assets/js/2.03393899.js" as="script"><link rel="preload" href="/blog/assets/js/6.b8323a3d.js" as="script"><link rel="prefetch" href="/blog/assets/js/3.0cb1c6da.js"><link rel="prefetch" href="/blog/assets/js/4.144a32d1.js"><link rel="prefetch" href="/blog/assets/js/5.a0cbbf8f.js"><link rel="prefetch" href="/blog/assets/js/7.5ec1fd90.js">
+    <link rel="stylesheet" href="/blog/assets/css/0.styles.38b4a37b.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/blog/" class="home-link router-link-active"><!----> <span class="site-name">Claire's 前端进阶</span></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <nav class="nav-links can-hide"><div class="nav-item"><a href="/blog/" class="nav-link">
+  Home
+</a></div><div class="nav-item"><a href="/blog/guide/" class="nav-link router-link-exact-active router-link-active">
+  进阶·博文
+</a></div> <!----></nav></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><nav class="nav-links"><div class="nav-item"><a href="/blog/" class="nav-link">
+  Home
+</a></div><div class="nav-item"><a href="/blog/guide/" class="nav-link router-link-exact-active router-link-active">
+  进阶·博文
+</a></div> <!----></nav>  <ul class="sidebar-links"><li><section class="sidebar-group depth-0"><p class="sidebar-heading open"><span>call和apply原理解析</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/blog/guide/#call模拟实现" class="sidebar-link">call模拟实现</a><ul class="sidebar-sub-headers"></ul></li><li><a href="/blog/guide/#apply模拟实现" class="sidebar-link">apply模拟实现</a><ul class="sidebar-sub-headers"></ul></li></ul></section></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="call和apply原理解析"><a href="#call和apply原理解析" class="header-anchor">#</a> call和apply原理解析</h1> <h2 id="call模拟实现"><a href="#call模拟实现" class="header-anchor">#</a> call模拟实现</h2> <p>首先请看示例</p> <div class="language-js extra-class"><pre class="language-js"><code><span class="token keyword">var</span> value <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token keyword">var</span> foo <span class="token operator">=</span> <span class="token punctuation">{</span>
+    value<span class="token operator">:</span> <span class="token number">2</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">function</span> <span class="token function">bar</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>value<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token function">bar</span><span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span>foo<span class="token punctuation">)</span> <span class="token comment">// 2</span>
+</code></pre></div><p>通过上面代码，我们知道call()主要有一下两点:<br>
+1、call()改变了this指向
+2、执行了bar函数
+那么可以为foo添加属性bar，调用函数bar,然后再将其删除</p> <div class="language-js extra-class"><pre class="language-js"><code><span class="token class-name">Function</span><span class="token punctuation">.</span>prototype<span class="token punctuation">.</span><span class="token function-variable function">call2</span> <span class="token operator">=</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token parameter">context</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+    context <span class="token operator">=</span> context <span class="token operator">?</span> <span class="token function">Object</span><span class="token punctuation">(</span>context<span class="token punctuation">)</span><span class="token operator">:</span> window<span class="token punctuation">;</span>
+    context<span class="token punctuation">.</span>fn <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+    <span class="token keyword">let</span> args <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token operator">...</span>arguments<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">slice</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+    <span class="token keyword">let</span> result <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">fn</span><span class="token punctuation">(</span><span class="token operator">...</span>args<span class="token punctuation">)</span>
+    
+    <span class="token keyword">delete</span> context<span class="token punctuation">.</span>fn
+    <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre></div><div class="language-js extra-class"><pre class="language-js"><code><span class="token comment">// 验证：</span>
+<span class="token keyword">var</span> foo <span class="token operator">=</span> <span class="token punctuation">{</span>
+    value<span class="token operator">:</span> <span class="token number">1</span>
+<span class="token punctuation">}</span>
+   
+<span class="token keyword">function</span> <span class="token function">bar</span><span class="token punctuation">(</span><span class="token parameter">name<span class="token punctuation">,</span> age</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>value<span class="token punctuation">,</span> name<span class="token punctuation">,</span> age<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+bar<span class="token punctuation">.</span><span class="token function">call2</span><span class="token punctuation">(</span>foo<span class="token punctuation">,</span> <span class="token string">'Claire'</span><span class="token punctuation">,</span> <span class="token number">18</span><span class="token punctuation">)</span> <span class="token comment">// 1 &quot;Claire&quot;, 18</span>
+</code></pre></div><p>注:
+1、Object构造函数为给定值创建一个对象包装器，如果给定值是null或undefined，将会创建并返回一个空对象，否则将返回一个与给定值对应类型的对象。当以非构造函数形式被调用时，Object等同于new Object()。
+2、slice()方法从已有的数组中返回选定的元素。返回值为一个新数组。
+3、this指向，谁调用指向谁。</p> <h2 id="apply模拟实现"><a href="#apply模拟实现" class="header-anchor">#</a> apply模拟实现</h2> <div class="language-js extra-class"><pre class="language-js"><code><span class="token class-name">Function</span><span class="token punctuation">.</span>prototype<span class="token punctuation">.</span><span class="token function-variable function">apply2</span> <span class="token operator">=</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token parameter">context<span class="token punctuation">,</span> arr</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    context <span class="token operator">=</span> context <span class="token operator">?</span> <span class="token function">Object</span><span class="token punctuation">(</span>context<span class="token punctuation">)</span> <span class="token operator">:</span> window<span class="token punctuation">;</span>
+    context<span class="token punctuation">.</span>fn <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+    <span class="token keyword">let</span> result<span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>arr<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        result <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        result <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">fn</span><span class="token punctuation">(</span><span class="token operator">...</span>arr<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">delete</span> context<span class="token punctuation">.</span>fn
+    <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre></div></div> <footer class="page-edit"><!----> <!----></footer> <!----> </main></div><div class="global-ui"><!----></div></div>
+    <script src="/blog/assets/js/app.82f7a662.js" defer></script><script src="/blog/assets/js/2.03393899.js" defer></script><script src="/blog/assets/js/6.b8323a3d.js" defer></script>
+  </body>
+</html>
