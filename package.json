@@ -1,0 +1,22 @@
+{
+  "name": "blog",
+  "version": "0.0.1",
+  "description": "first blog",
+  "main": "index.js",
+  "authors": {
+    "name": "Claire",
+    "email": "673639338@qq.com"
+  },
+  "repository": "git@github.com:ClaireBabylove/blog.git/blog",
+  "scripts": {
+    "dev": "vuepress dev docs",
+    "build": "vuepress build docs"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@vuepress/plugin-back-to-top": "^1.3.1",
+    "@vuepress/plugin-medium-zoom": "^1.3.1",
+    "@vuepress/theme-blog": "^2.2.0",
+    "vuepress": "^1.3.1"
+  }
+}
